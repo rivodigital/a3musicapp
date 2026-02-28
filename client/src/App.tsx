@@ -26,6 +26,35 @@ const getChannelColor = (name: string, index: number) => {
   return colors[index % colors.length];
 };
 
+const getChannelIcon = (name: string) => {
+  if (!name) return '';
+  const n = name.toUpperCase().trim();
+  switch (n) {
+    case 'BUMBO': return '🥁';
+    case 'CAIXA': return '🥁';
+    case 'TON 1': return '🥁';
+    case 'SURDO': return '🥁';
+    case 'HI HAT': return '🥁';
+    case 'OVER': return '🥁';
+    case 'BAIXO': return '🎸';
+    case 'BASS': return '🎸';
+    case 'GUITARRA': return '🎸';
+    case 'GUITARA': return '🎸';
+    case 'TECLADO': return '🎹';
+    case 'PIANO': return '🎹';
+    case 'VIOLÃO': return '🎸';
+    case 'PAD': return '🎛️';
+    case 'AKG': return '🎤';
+    case 'SHURE LARANJA': return '🎤';
+    case 'SHURE VERDE': return '🎤';
+    case 'AMARELO': return '🎤';
+    case 'VERMELHO': return '🎤';
+    case 'AZUL': return '🎤';
+    case 'ROSA': return '🎤';
+    default: return '';
+  }
+};
+
 const isDrumChannel = (name: string) => {
   if (!name) return false;
   const n = name.toUpperCase();
@@ -50,7 +79,7 @@ const DrumGroupFader = ({ channelsData, handleSetVol, isTopArea, onRemove, defau
     <>
       <div style={{ position: 'relative' }}>
         <Fader
-          label="BATERIA"
+          label="🥁 BATERIA"
           color="var(--ch-drums)"
           value={maxVol}
           onChange={handleGroupChange}
@@ -75,7 +104,7 @@ const DrumGroupFader = ({ channelsData, handleSetVol, isTopArea, onRemove, defau
       {expanded && drumIndices.map((i: number) => (
         <Fader
           key={`drum-${i}`}
-          label={channelsData[i].name.toUpperCase()}
+          label={`${getChannelIcon(channelsData[i].name)} ${channelsData[i].name.toUpperCase()}`.trim()}
           color="var(--ch-drums)"
           value={channelsData[i].vol}
           onChange={(v: number) => handleSetVol(i, v)}
@@ -521,7 +550,7 @@ export function App() {
                 />
               ) : (
                 <Fader
-                  label={userData.instrument.toUpperCase()}
+                  label={`${getChannelIcon(userData.instrument)} ${userData.instrument.toUpperCase()}`.trim()}
                   color="var(--accent)"
                   value={myInstrumentVol}
                   isMaster={true}
@@ -549,7 +578,7 @@ export function App() {
                 return (
                   <div key={`add-${chIdx}`} style={{ position: 'relative' }}>
                     <Fader
-                      label={channelsData[chIdx].name.toUpperCase()}
+                      label={`${getChannelIcon(channelsData[chIdx].name)} ${channelsData[chIdx].name.toUpperCase()}`.trim()}
                       color="var(--accent)"
                       value={channelsData[chIdx].vol}
                       isMaster={true}
@@ -630,7 +659,7 @@ export function App() {
                 return (
                   <Fader
                     key={i}
-                    label={ch.name}
+                    label={`${getChannelIcon(ch.name)} ${ch.name.toUpperCase()}`.trim()}
                     color={getChannelColor(ch.name, i)}
                     value={ch.vol}
                     onChange={(val) => handleSetVol(i, val)}
