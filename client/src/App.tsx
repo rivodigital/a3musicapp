@@ -4,7 +4,6 @@ import { SoundcraftUI } from 'soundcraft-ui-connection';
 import './index.css';
 
 interface UserData {
-  name: string;
   instrument: string;
   instrumentIndex: number;
   auxIndex: number;
@@ -37,6 +36,7 @@ export function App() {
 
   // Connection Error States so we can show user-friendly messages
   const [setupError, setSetupError] = useState(false);
+  const [isSetupConnected, setIsSetupConnected] = useState(false);
   const [sessionError, setSessionError] = useState(false);
 
   // 24 Channels from Ui24R
@@ -97,6 +97,7 @@ export function App() {
         // If it connected, clear the error
         clearTimeout(connectTimeout);
         setSetupError(false);
+        setIsSetupConnected(true);
 
         for (let i = 0; i < 24; i++) {
           const input = sui.master.input(i + 1);
@@ -131,6 +132,7 @@ export function App() {
 
     return () => {
       clearTimeout(connectTimeout);
+      setIsSetupConnected(false);
       unsubs.forEach(u => u());
       sui.disconnect();
     };
@@ -225,7 +227,6 @@ export function App() {
     e.preventDefault();
     const target = e.target as any;
     const data: UserData = {
-      name: target.name.value,
       instrument: target.instrument.options[target.instrument.selectedIndex].text,
       instrumentIndex: parseInt(target.instrument.value, 10),
       auxIndex: parseInt(target.auxIndex.value, 10),
@@ -309,44 +310,46 @@ export function App() {
             </div>
           )}
 
-          <form onSubmit={handleSetupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className="input-group">
-              <label className="input-label">Seu Nome</label>
-              <input name="name" type="text" className="input" placeholder="ex: João" required />
+          {!isSetupConnected && !setupError ? (
+            <div style={{ textAlign: 'center', margin: '2rem 0', color: 'var(--text-secondary)' }}>
+              <div className="status-dot connected" style={{ width: 16, height: 16, marginBottom: '1rem', animation: 'pulse 1.5s infinite', display: 'inline-block' }} />
+              <p>Conectando e buscando canais...</p>
             </div>
+          ) : isSetupConnected ? (
+            <form onSubmit={handleSetupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="input-group">
+                <label className="input-label">Qual é o seu canal / instrumento?</label>
+                <select name="instrument" className="input" required>
+                  {setupChannels.map(ch => (
+                    <option key={ch.index} value={ch.index}>{ch.name}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="input-group">
-              <label className="input-label">Qual é o seu canal / instrumento?</label>
-              <select name="instrument" className="input" required>
-                {setupChannels.map(ch => (
-                  <option key={ch.index} value={ch.index}>{ch.name}</option>
-                ))}
-              </select>
-            </div>
+              <div className="input-group">
+                <label className="input-label">Qual é o seu AUX? (Pergunte ao técnico)</label>
+                <select name="auxIndex" className="input" required defaultValue="0">
+                  {setupAuxes.map(aux => (
+                    <option key={aux.index} value={aux.index}>{aux.name}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="input-group">
-              <label className="input-label">Qual é o seu AUX? (Pergunte ao técnico)</label>
-              <select name="auxIndex" className="input" required defaultValue="0">
-                {setupAuxes.map(aux => (
-                  <option key={aux.index} value={aux.index}>{aux.name}</option>
-                ))}
-              </select>
-            </div>
+              {/* Hidden by default, useful for local testing */}
+              <div className="input-group" style={{ display: 'none' }}>
+                <label className="input-label">Mixer IP</label>
+                <input name="mixerIp" type="text" className="input" defaultValue="192.168.1.10" />
+              </div>
 
-            {/* Hidden by default, useful for local testing */}
-            <div className="input-group" style={{ display: 'none' }}>
-              <label className="input-label">Mixer IP</label>
-              <input name="mixerIp" type="text" className="input" defaultValue="192.168.1.10" />
-            </div>
-
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Entrar na Mixagem</button>
-
-            {setupError && (
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Entrar na Mixagem</button>
+            </form>
+          ) : (
+            <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <button type="button" onClick={() => window.location.reload()} className="btn" style={{ padding: '0.8rem' }}>
                 🔄 Tentar reconectar
               </button>
-            )}
-          </form>
+            </form>
+          )}
 
           {/* PWA Install Area */}
           {!isStandalone && (
