@@ -231,6 +231,11 @@ export function App() {
     } catch (e) { }
   };
 
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText("A3123456");
+    alert("Senha A3123456 copiada!");
+  };
+
   if (!userData) {
     return (
       <div className="login-container">
@@ -241,10 +246,13 @@ export function App() {
           </div>
 
           {setupError && (
-            <div style={{ padding: '0.8rem', backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '8px', marginBottom: '1rem' }}>
-              <p style={{ fontSize: '0.85rem', color: '#fff', margin: 0 }}>
+            <div style={{ padding: '0.8rem', backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '8px', marginBottom: '1rem', textAlign: 'left' }}>
+              <p style={{ fontSize: '0.85rem', color: '#fff', margin: 0, lineHeight: '1.5' }}>
                 <strong style={{ color: 'var(--danger)' }}>Sem conexão com a mesa!</strong><br />
-                Por favor, conecte-se na rede <b>Wi-Fi da Igreja A3</b>.
+                Por favor, conecte-se na rede Wi-Fi:<br />
+                <b>Rede:</b> MESADESOM-A3<br />
+                <b>Senha:</b> A3123456{' '}
+                <button type="button" onClick={handleCopyPassword} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer', marginLeft: '5px' }}>Copiar Senha</button>
               </p>
             </div>
           )}
@@ -350,13 +358,15 @@ export function App() {
               <div style={{ backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '12px', padding: '1.5rem', width: '100%', maxWidth: 400 }}>
                 <h2 style={{ color: 'var(--danger)', marginBottom: '1rem', fontSize: '1.4rem' }}>Você está Offline</h2>
                 <p style={{ color: '#fff', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-                  Para usar o monitor pessoal, o seu dispositivo <strong>obrigatoriamente precisa estar conectado no Wi-Fi da Mesa (Igreja A3)</strong>.
+                  Para usar o monitor pessoal, o seu dispositivo <strong>obrigatoriamente precisa estar conectado no Wi-Fi da Mesa</strong>.
                 </p>
 
                 <ol style={{ textAlign: 'left', color: '#ccc', fontSize: '0.9rem', marginBottom: '1.5rem', paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                  <li>Saia do aplicativo (mas não feche).</li>
                   <li>Vá nos <b>Ajustes de Wi-Fi</b> do celular.</li>
-                  <li>Conecte-se na rede da <b>Mesa de Som (A3)</b>.</li>
+                  <li>Conecte-se na rede <b>MESADESOM-A3</b>.</li>
+                  <li>Senha: <b>A3123456</b>
+                    <button type="button" onClick={handleCopyPassword} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', marginLeft: '10px' }}>Copiar Senha</button>
+                  </li>
                   <li>Volte aqui e clique no botão abaixo.</li>
                 </ol>
 
