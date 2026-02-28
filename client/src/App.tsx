@@ -321,8 +321,9 @@ export function App() {
     return (
       <div className="login-container">
         <div className="login-card glass-panel" style={{ maxWidth: 400, margin: 'auto' }}>
-          <div className="brand" style={{ marginBottom: '1.5rem' }}>
-            <h1 className="brand-title">A3 Music Mixer</h1>
+          <div className="brand" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src="/logo.png" alt="Music Mixer Logo" style={{ width: '80px', height: '80px', marginBottom: '1rem', borderRadius: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }} />
+            <h1 className="brand-title">Music Mixer</h1>
             <p className="text-small">Monitor Pessoal Offline</p>
           </div>
 
