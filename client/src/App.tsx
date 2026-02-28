@@ -467,44 +467,52 @@ export function App() {
                   >✕</button>
                 </div>
               ))}
+
+              {/* Minimalist Add Button placed in the flex row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '80px' }}>
+                {isAddingChannel ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--surface)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <select
+                      className="input"
+                      style={{ fontSize: '0.85rem', padding: '0.4rem' }}
+                      value=""
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val)) {
+                          const nextAdd = [...(userData.additionalInstruments || []), val];
+                          const updated = { ...userData, additionalInstruments: nextAdd };
+                          setUserData(updated);
+                          localStorage.setItem('userData', JSON.stringify(updated));
+                          setIsAddingChannel(false);
+                        }
+                      }}
+                    >
+                      <option value="" disabled>Qual?</option>
+                      {channelsData.map((ch, i) => {
+                        if (i === userData.instrumentIndex || (userData.additionalInstruments || []).includes(i)) return null;
+                        return <option key={i} value={i}>{ch.name}</option>;
+                      })}
+                    </select>
+                    <button className="btn" style={{ padding: '0.3rem', fontSize: '0.8rem' }} onClick={() => setIsAddingChannel(false)}>Cancelar</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsAddingChannel(true)}
+                    style={{
+                      width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '1.5rem', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    title="Adicionar Canal"
+                  >
+                    +
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              {isAddingChannel ? (
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
-                  <select
-                    className="input"
-                    style={{ width: 'auto', padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
-                    value=""
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val)) {
-                        const nextAdd = [...(userData.additionalInstruments || []), val];
-                        const updated = { ...userData, additionalInstruments: nextAdd };
-                        setUserData(updated);
-                        localStorage.setItem('userData', JSON.stringify(updated));
-                        setIsAddingChannel(false);
-                      }
-                    }}
-                  >
-                    <option value="" disabled>+ Selecione um canal...</option>
-                    {channelsData.map((ch, i) => {
-                      if (i === userData.instrumentIndex || (userData.additionalInstruments || []).includes(i)) return null;
-                      return <option key={i} value={i}>{ch.name}</option>;
-                    })}
-                  </select>
-                  <button className="btn" style={{ padding: '0.4rem 0.8rem' }} onClick={() => setIsAddingChannel(false)}>✕</button>
-                </div>
-              ) : (
-                <button
-                  className="btn"
-                  style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}
-                  onClick={() => setIsAddingChannel(true)}
-                >
-                  + Seu 2º Instrumento/Canal
-                </button>
-              )}
-            </div>
 
             <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>OUTROS INSTRUMENTOS DA BANDA</h3>
             <div className="mixer-grid">
