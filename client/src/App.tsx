@@ -6,6 +6,7 @@ import './index.css';
 interface UserData {
   name: string;
   instrument: string;
+  instrumentIndex: number;
   auxIndex: number;
   mixerIp: string;
 }
@@ -31,7 +32,7 @@ export function App() {
   });
 
   const [isConnected, setIsConnected] = useState(false);
-  const [masterVol, setMasterVol] = useState(0);
+  const [myInstrumentVol, setMyInstrumentVol] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
   // Connection Error States so we can show user-friendly messages
@@ -167,10 +168,12 @@ export function App() {
 
         await sui.connect();
 
-        // Listen to Master AUX Volume
+        // Listen to User's specific instrument volume
+        const myChannel = sui.aux(userData.auxIndex + 1).input(userData.instrumentIndex + 1);
+        const subMyVol = myChannel.faderLevel$.subscribe((val: number) => setMyInstrumentVol(val));
+        unsubs.push(() => subMyVol.unsubscribe());
+
         const auxBus = sui.master.aux(userData.auxIndex + 1);
-        const subMaster = auxBus.faderLevel$.subscribe((val: number) => setMasterVol(val));
-        unsubs.push(() => subMaster.unsubscribe());
 
         // Listen to Master AUX Mute
         const subMute = auxBus.mute$.subscribe((val: number) => setIsMuted(val === 1));
@@ -224,6 +227,7 @@ export function App() {
     const data: UserData = {
       name: target.name.value,
       instrument: target.instrument.options[target.instrument.selectedIndex].text,
+      instrumentIndex: parseInt(target.instrument.value, 10),
       auxIndex: parseInt(target.auxIndex.value, 10),
       mixerIp: target.mixerIp.value || '192.168.1.10'
     };
@@ -250,10 +254,10 @@ export function App() {
     } catch (e) { }
   };
 
-  const handleSetMaster = (vol: number) => {
+  const handleSetMyInstrumentVol = (vol: number) => {
     if (!suiRef.current || !userData) return;
     try {
-      suiRef.current.master.aux(userData.auxIndex + 1).setFaderLevel(vol);
+      suiRef.current.aux(userData.auxIndex + 1).input(userData.instrumentIndex + 1).setFaderLevel(vol);
     } catch (e) { }
   };
 
@@ -390,25 +394,28 @@ export function App() {
           <div style={{ opacity: isMuted ? 0.3 : 1, transition: 'opacity 0.2s', pointerEvents: isMuted ? 'none' : 'auto' }}>
             <div style={{ padding: '1rem 0', display: 'flex', justifyContent: 'center' }}>
               <Fader
-                label="VOLUME GERAL DO FONE"
+                label={`VOLUME: ${userData.instrument.toUpperCase()}`}
                 color="var(--accent)"
-                value={masterVol}
+                value={myInstrumentVol}
                 isMaster={true}
-                onChange={(val) => handleSetMaster(val)}
+                onChange={(val) => handleSetMyInstrumentVol(val)}
               />
             </div>
 
-            <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>MIXAGEM DOS INSTRUMENTOS</h3>
+            <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>OUTROS INSTRUMENTOS DA BANDA</h3>
             <div className="mixer-grid">
-              {channelsData.map((ch, i: number) => (
-                <Fader
-                  key={i}
-                  label={ch.name}
-                  color={getChannelColor(ch.name, i)}
-                  value={ch.vol}
-                  onChange={(val) => handleSetVol(i, val)}
-                />
-              ))}
+              {channelsData.map((ch, i: number) => {
+                if (i === userData.instrumentIndex) return null;
+                return (
+                  <Fader
+                    key={i}
+                    label={ch.name}
+                    color={getChannelColor(ch.name, i)}
+                    value={ch.vol}
+                    onChange={(val) => handleSetVol(i, val)}
+                  />
+                );
+              })}
             </div>
           </div>
         ) : (
