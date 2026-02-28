@@ -6,6 +6,7 @@ import './index.css';
 interface UserData {
   instrument: string;
   instrumentIndex: number;
+  additionalInstruments?: number[];
   auxIndex: number;
   mixerIp: string;
 }
@@ -52,6 +53,7 @@ export function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isAddingChannel, setIsAddingChannel] = useState(false);
 
   useEffect(() => {
     // Detect iOS
@@ -229,6 +231,7 @@ export function App() {
     const data: UserData = {
       instrument: target.instrument.options[target.instrument.selectedIndex].text,
       instrumentIndex: parseInt(target.instrument.value, 10),
+      additionalInstruments: [],
       auxIndex: parseInt(target.auxIndex.value, 10),
       mixerIp: target.mixerIp.value || '192.168.1.10'
     };
@@ -395,7 +398,7 @@ export function App() {
       <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {isConnected ? (
           <div style={{ opacity: isMuted ? 0.3 : 1, transition: 'opacity 0.2s', pointerEvents: isMuted ? 'none' : 'auto' }}>
-            <div style={{ padding: '1rem 0', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ padding: '1rem 0', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <Fader
                 label={`VOLUME: ${userData.instrument.toUpperCase()}`}
                 color="var(--accent)"
@@ -403,12 +406,70 @@ export function App() {
                 isMaster={true}
                 onChange={(val) => handleSetMyInstrumentVol(val)}
               />
+
+              {(userData.additionalInstruments || []).map(chIdx => (
+                <div key={`add-${chIdx}`} style={{ position: 'relative' }}>
+                  <Fader
+                    label={`VOLUME: ${channelsData[chIdx].name.toUpperCase()}`}
+                    color="var(--accent)"
+                    value={channelsData[chIdx].vol}
+                    isMaster={true}
+                    onChange={(val) => handleSetVol(chIdx, val)}
+                  />
+                  <button
+                    style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                    onClick={() => {
+                      const nextAdd = (userData.additionalInstruments || []).filter(id => id !== chIdx);
+                      const updated = { ...userData, additionalInstruments: nextAdd };
+                      setUserData(updated);
+                      localStorage.setItem('userData', JSON.stringify(updated));
+                    }}
+                  >✕</button>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              {isAddingChannel ? (
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                  <select
+                    className="input"
+                    style={{ width: 'auto', padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
+                    value=""
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val)) {
+                        const nextAdd = [...(userData.additionalInstruments || []), val];
+                        const updated = { ...userData, additionalInstruments: nextAdd };
+                        setUserData(updated);
+                        localStorage.setItem('userData', JSON.stringify(updated));
+                        setIsAddingChannel(false);
+                      }
+                    }}
+                  >
+                    <option value="" disabled>+ Selecione um canal...</option>
+                    {channelsData.map((ch, i) => {
+                      if (i === userData.instrumentIndex || (userData.additionalInstruments || []).includes(i)) return null;
+                      return <option key={i} value={i}>{ch.name}</option>;
+                    })}
+                  </select>
+                  <button className="btn" style={{ padding: '0.4rem 0.8rem' }} onClick={() => setIsAddingChannel(false)}>✕</button>
+                </div>
+              ) : (
+                <button
+                  className="btn"
+                  style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}
+                  onClick={() => setIsAddingChannel(true)}
+                >
+                  + Seu 2º Instrumento/Canal
+                </button>
+              )}
             </div>
 
             <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>OUTROS INSTRUMENTOS DA BANDA</h3>
             <div className="mixer-grid">
               {channelsData.map((ch, i: number) => {
-                if (i === userData.instrumentIndex) return null;
+                if (i === userData.instrumentIndex || (userData.additionalInstruments || []).includes(i)) return null;
                 return (
                   <Fader
                     key={i}
