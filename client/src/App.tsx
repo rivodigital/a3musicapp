@@ -26,6 +26,66 @@ const getChannelColor = (name: string, index: number) => {
   return colors[index % colors.length];
 };
 
+const isDrumChannel = (name: string) => {
+  if (!name) return false;
+  const n = name.toUpperCase();
+  return n.includes('BUMBO') || n.includes('CAIXA') || n.includes('TON') || n.includes('SURDO') || n.includes('HI HAT') || n.includes('OVER') || n.includes('HAT') || n.includes('KICK') || n.includes('SNARE') || n.includes('BAT');
+};
+
+const DrumGroupFader = ({ channelsData, handleSetVol, isTopArea, onRemove, defaultExpanded = false }: any) => {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const drumIndices = channelsData.map((ch: any, i: number) => isDrumChannel(ch.name) ? i : -1).filter((i: number) => i !== -1);
+
+  if (drumIndices.length === 0) return null;
+  const maxVol = drumIndices.length > 0 ? Math.max(...drumIndices.map((i: number) => channelsData[i].vol), 0) : 0;
+
+  const handleGroupChange = (newVol: number) => {
+    const delta = newVol - maxVol;
+    drumIndices.forEach((i: number) => {
+      handleSetVol(i, Math.max(0, Math.min(1, channelsData[i].vol + delta)));
+    });
+  };
+
+  return (
+    <>
+      <div style={{ position: 'relative' }}>
+        <Fader
+          label="BATERIA"
+          color="var(--ch-drums)"
+          value={maxVol}
+          onChange={handleGroupChange}
+          isMaster={isTopArea}
+          footer={
+            <button
+              className="btn"
+              style={{ padding: '0.4rem', fontSize: '0.75rem', width: '100%', borderRadius: '8px', background: 'rgba(255,255,255,0.1)' }}
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? '▲ Ocultar' : '▼ Expandir'}
+            </button>
+          }
+        />
+        {onRemove && (
+          <button
+            style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+            onClick={onRemove}
+          >✕</button>
+        )}
+      </div>
+      {expanded && drumIndices.map((i: number) => (
+        <Fader
+          key={`drum-${i}`}
+          label={channelsData[i].name.toUpperCase()}
+          color="var(--ch-drums)"
+          value={channelsData[i].vol}
+          onChange={(v: number) => handleSetVol(i, v)}
+          isMaster={false}
+        />
+      ))}
+    </>
+  );
+};
+
 export function App() {
   const [userData, setUserData] = useState<UserData | null>(() => {
     const saved = localStorage.getItem('userData');
@@ -181,9 +241,12 @@ export function App() {
         await sui.connect();
 
         // Listen to User's specific instrument volume
-        const myChannel = sui.aux(userData.auxIndex + 1).input(userData.instrumentIndex + 1);
-        const subMyVol = myChannel.faderLevel$.subscribe((val: number) => setMyInstrumentVol(val));
-        unsubs.push(() => subMyVol.unsubscribe());
+        let subMyVol: any;
+        if (userData.instrumentIndex !== -1) {
+          const myChannel = sui.aux(userData.auxIndex + 1).input(userData.instrumentIndex + 1);
+          subMyVol = myChannel.faderLevel$.subscribe((val: number) => setMyInstrumentVol(val));
+          if (subMyVol) unsubs.push(() => subMyVol.unsubscribe());
+        }
 
         const auxBus = sui.master.aux(userData.auxIndex + 1);
 
@@ -276,6 +339,7 @@ export function App() {
   };
 
   const handleSetMyInstrumentVol = (vol: number) => {
+    if (userData?.instrumentIndex === -1) return;
     if (userData?.mixerIp === 'DEMO') {
       setMyInstrumentVol(vol);
       return;
@@ -349,6 +413,9 @@ export function App() {
               <div className="input-group">
                 <label className="input-label">Qual é o seu canal / instrumento?</label>
                 <select name="instrument" className="input" required>
+                  {setupChannels.some(ch => isDrumChannel(ch.name)) && (
+                    <option value="-1">🥁 BATERIA (Sou Baterista)</option>
+                  )}
                   {setupChannels.map(ch => (
                     <option key={ch.index} value={ch.index}>{ch.name}</option>
                   ))}
@@ -442,34 +509,62 @@ export function App() {
         {isConnected ? (
           <div style={{ opacity: isMuted ? 0.3 : 1, transition: 'opacity 0.2s', pointerEvents: isMuted ? 'none' : 'auto' }}>
             <div style={{ padding: '1rem 0', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <Fader
-                label={userData.instrument.toUpperCase()}
-                color="var(--accent)"
-                value={myInstrumentVol}
-                isMaster={true}
-                onChange={(val) => handleSetMyInstrumentVol(val)}
-              />
 
-              {(userData.additionalInstruments || []).map(chIdx => (
-                <div key={`add-${chIdx}`} style={{ position: 'relative' }}>
-                  <Fader
-                    label={channelsData[chIdx].name.toUpperCase()}
-                    color="var(--accent)"
-                    value={channelsData[chIdx].vol}
-                    isMaster={true}
-                    onChange={(val) => handleSetVol(chIdx, val)}
-                  />
-                  <button
-                    style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
-                    onClick={() => {
-                      const nextAdd = (userData.additionalInstruments || []).filter(id => id !== chIdx);
-                      const updated = { ...userData, additionalInstruments: nextAdd };
-                      setUserData(updated);
-                      localStorage.setItem('userData', JSON.stringify(updated));
-                    }}
-                  >✕</button>
-                </div>
-              ))}
+              {userData.instrumentIndex === -1 ? (
+                <DrumGroupFader
+                  channelsData={channelsData}
+                  handleSetVol={handleSetVol}
+                  isTopArea={true}
+                  defaultExpanded={true}
+                />
+              ) : (
+                <Fader
+                  label={userData.instrument.toUpperCase()}
+                  color="var(--accent)"
+                  value={myInstrumentVol}
+                  isMaster={true}
+                  onChange={(val) => handleSetMyInstrumentVol(val)}
+                />
+              )}
+
+              {(userData.additionalInstruments || []).map(chIdx => {
+                if (chIdx === -1) {
+                  return (
+                    <DrumGroupFader
+                      key="add-bateria-grupo"
+                      channelsData={channelsData}
+                      handleSetVol={handleSetVol}
+                      isTopArea={true}
+                      onRemove={() => {
+                        const nextAdd = (userData.additionalInstruments || []).filter(id => id !== -1);
+                        const updated = { ...userData, additionalInstruments: nextAdd };
+                        setUserData(updated);
+                        localStorage.setItem('userData', JSON.stringify(updated));
+                      }}
+                    />
+                  );
+                }
+                return (
+                  <div key={`add-${chIdx}`} style={{ position: 'relative' }}>
+                    <Fader
+                      label={channelsData[chIdx].name.toUpperCase()}
+                      color="var(--accent)"
+                      value={channelsData[chIdx].vol}
+                      isMaster={true}
+                      onChange={(val) => handleSetVol(chIdx, val)}
+                    />
+                    <button
+                      style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                      onClick={() => {
+                        const nextAdd = (userData.additionalInstruments || []).filter(id => id !== chIdx);
+                        const updated = { ...userData, additionalInstruments: nextAdd };
+                        setUserData(updated);
+                        localStorage.setItem('userData', JSON.stringify(updated));
+                      }}
+                    >✕</button>
+                  </div>
+                );
+              })}
 
               {/* Minimalist Add Button placed in the flex row */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '80px' }}>
@@ -491,8 +586,12 @@ export function App() {
                       }}
                     >
                       <option value="" disabled>Qual?</option>
+                      {userData.instrumentIndex !== -1 && !(userData.additionalInstruments || []).includes(-1) && channelsData.some(ch => isDrumChannel(ch.name)) && (
+                        <option value="-1">🥁 BATERIA (Grupo)</option>
+                      )}
                       {channelsData.map((ch, i) => {
                         if (i === userData.instrumentIndex || (userData.additionalInstruments || []).includes(i)) return null;
+                        if (isDrumChannel(ch.name)) return null;
                         return <option key={i} value={i}>{ch.name}</option>;
                       })}
                     </select>
@@ -519,8 +618,13 @@ export function App() {
 
             <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>AJUSTE O VOLUME DA BANDA</h3>
             <div className="mixer-grid">
+              {userData.instrumentIndex !== -1 && !(userData.additionalInstruments || []).includes(-1) && channelsData.some(ch => isDrumChannel(ch.name)) && (
+                <DrumGroupFader channelsData={channelsData} handleSetVol={handleSetVol} isTopArea={false} />
+              )}
+
               {channelsData.map((ch, i: number) => {
                 if (i === userData.instrumentIndex || (userData.additionalInstruments || []).includes(i)) return null;
+                if (isDrumChannel(ch.name)) return null;
                 return (
                   <Fader
                     key={i}

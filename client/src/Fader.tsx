@@ -7,10 +7,11 @@ interface FaderProps {
     value: number; // 0.0 to 1.0
     onChange: (val: number) => void;
     isMaster?: boolean;
+    footer?: React.ReactNode;
 }
 
 export const Fader: React.FC<FaderProps> = ({
-    label, color, value, onChange, isMaster
+    label, color, value, onChange, isMaster, footer
 }) => {
     const trackRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -92,6 +93,7 @@ export const Fader: React.FC<FaderProps> = ({
                     </div>
                 </div>
             </div>
+            {footer && <div style={{ marginTop: '0.5rem', width: '100%', display: 'flex', justifyContent: 'center' }}>{footer}</div>}
         </div>
     );
 };
