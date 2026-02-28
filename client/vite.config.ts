@@ -9,10 +9,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'A3Mon - Monitor Pessoal',
-        short_name: 'A3Mon',
+        name: 'A3 Music Mixer',
+        short_name: 'A3 Music',
         description: 'PWA Web App de Controle de Mixer',
-        theme_color: '#1a1a1a',
+        theme_color: '#050505',
         background_color: '#000000',
         display: 'standalone',
         icons: [

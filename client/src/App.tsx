@@ -275,7 +275,7 @@ export function App() {
       <div className="login-container">
         <div className="login-card glass-panel" style={{ maxWidth: 400, margin: 'auto' }}>
           <div className="brand" style={{ marginBottom: '1.5rem' }}>
-            <h1 className="brand-title">A3Mon</h1>
+            <h1 className="brand-title">A3 Music Mixer</h1>
             <p className="text-small">Monitor Pessoal Offline</p>
           </div>
 
