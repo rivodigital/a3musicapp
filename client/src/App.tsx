@@ -3,11 +3,6 @@ import { Fader } from './Fader';
 import { SoundcraftUI } from 'soundcraft-ui-connection';
 import './index.css';
 
-const INSTRUMENTS = [
-  'Baixo', 'Bateria', 'Vocal', 'Ministro',
-  'Teclado', 'Violão', 'Guitarra', 'Outro'
-];
-
 interface UserData {
   name: string;
   instrument: string;
@@ -44,8 +39,50 @@ export function App() {
     return Array(24).fill(0).map((_, i) => ({ vol: 0, name: `CH ${i + 1}` }));
   });
 
+  // Setup channels for the dropdown
+  const [setupChannels, setSetupChannels] = useState<{ index: number, name: string }[]>([]);
+
   const suiRef = useRef<SoundcraftUI | null>(null);
 
+  // Effect for Setup Screen
+  useEffect(() => {
+    if (userData) return;
+
+    let unsubs: Array<() => void> = [];
+    const sui = new SoundcraftUI('192.168.1.10');
+
+    // Initialize with default values
+    setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: `CH ${i + 1}` })));
+
+    const fetchSetupChannels = async () => {
+      try {
+        await sui.connect();
+        for (let i = 0; i < 24; i++) {
+          const input = sui.master.input(i + 1);
+          const subName = input.name$.subscribe((name: string) => {
+            setSetupChannels(prev => {
+              const next = [...prev];
+              next[i] = { index: i, name: name || `CH ${i + 1}` };
+              return next;
+            });
+          });
+          unsubs.push(() => subName.unsubscribe());
+        }
+      } catch (e) {
+        console.error("Failed to connect for setup names", e);
+      }
+    };
+
+    fetchSetupChannels();
+
+    return () => {
+      unsubs.forEach(u => u());
+      sui.disconnect();
+    };
+  }, [userData]);
+
+
+  // Effect for Musician View
   useEffect(() => {
     let unsubs: Array<() => void> = [];
 
@@ -118,7 +155,7 @@ export function App() {
     const target = e.target as any;
     const data: UserData = {
       name: target.name.value,
-      instrument: target.instrument.value,
+      instrument: target.instrument.options[target.instrument.selectedIndex].text,
       auxIndex: parseInt(target.auxIndex.value, 10),
       mixerIp: target.mixerIp.value || '192.168.1.10'
     };
@@ -177,10 +214,10 @@ export function App() {
             </div>
 
             <div className="input-group">
-              <label className="input-label">O que você toca?</label>
-              <select name="instrument" className="input" required defaultValue="Guitarra">
-                {INSTRUMENTS.map(inst => (
-                  <option key={inst} value={inst}>{inst}</option>
+              <label className="input-label">Qual é o seu canal / instrumento?</label>
+              <select name="instrument" className="input" required>
+                {setupChannels.map(ch => (
+                  <option key={ch.index} value={ch.index}>{ch.name}</option>
                 ))}
               </select>
             </div>
@@ -188,7 +225,7 @@ export function App() {
             <div className="input-group">
               <label className="input-label">Qual é o seu AUX? (Pergunte ao técnico)</label>
               <select name="auxIndex" className="input" required defaultValue="0">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((auxNum, idx) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((auxNum, idx) => (
                   <option key={idx} value={idx}>AUX {auxNum}</option>
                 ))}
               </select>
