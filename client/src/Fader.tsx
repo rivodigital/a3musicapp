@@ -33,6 +33,11 @@ export const Fader: React.FC<FaderProps> = ({
     }, [localValue]);
 
     const handlePointerDown = (e: React.PointerEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.fader-cap')) {
+            return; // Ignore clicks outside the knob/cap
+        }
+
         e.preventDefault();
         setIsDragging(true);
         if (trackRef.current) trackRef.current.setPointerCapture(e.pointerId);
