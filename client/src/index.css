@@ -313,7 +313,6 @@ h4 {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column-reverse;
-  overflow: hidden;
 }
 
 .fader-fill {
@@ -325,31 +324,40 @@ h4 {
   position: absolute;
   left: 50%;
   transform: translateX(-50%) translateY(50%);
-  width: 100px;
-  height: 100px;
-  background: linear-gradient(180deg, #2A2A35 0%, #1A1A24 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  width: 70px;
+  height: 50px;
+  background: linear-gradient(180deg, #4A4A58 0%, #1A1A24 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.6),
+    0 8px 15px rgba(0, 0, 0, 0.8),
+    0 3px 6px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
-  z-index: 2;
-  transition: box-shadow 0.2s ease, transform 0.1s linear;
+  z-index: 10;
+  transition: transform 0.1s linear, filter 0.1s ease;
 }
 
 .fader-cap:active {
   cursor: grabbing;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  filter: brightness(0.9);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.7),
+    0 4px 8px rgba(0, 0, 0, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .fader-cap-line {
-  width: 80%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 2px;
-  box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  width: 70%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--accent) 0%, #fff 50%, var(--accent) 100%);
+  border-radius: 3px;
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 
 .fader-value {
