@@ -8,6 +8,7 @@ interface UserData {
   instrumentIndex: number;
   additionalInstruments?: number[];
   auxIndex: number;
+  auxName?: string;
   mixerIp: string;
 }
 
@@ -240,6 +241,7 @@ export function App() {
       instrumentIndex: parseInt(target.instrument.value, 10),
       additionalInstruments: [],
       auxIndex: parseInt(target.auxIndex.value, 10),
+      auxName: target.auxIndex.options[target.auxIndex.selectedIndex].text,
       mixerIp: target.mixerIp.value || '192.168.1.10'
     };
 
@@ -421,7 +423,7 @@ export function App() {
       <header className="top-bar glass-panel" style={{ marginBottom: '0', borderRadius: '0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="connection-status">
           <div className={`status-dot ${isConnected ? 'connected' : 'offline'}`} />
-          <span style={{ fontWeight: 600 }}>AUX {userData.auxIndex + 1} - {userData.instrument}</span>
+          <span style={{ fontWeight: 600 }}>{userData.auxName || `AUX ${userData.auxIndex + 1}`}</span>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button
@@ -429,7 +431,7 @@ export function App() {
             onClick={handleToggleMute}
             style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
           >
-            {isMuted ? '🔇 Mutado' : '🔊 Mute Geral'}
+            {isMuted ? '🔇 Mute' : '🔊 Mute'}
           </button>
           <button className="btn" onClick={handleLogout} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>⚙️</button>
         </div>
@@ -440,7 +442,7 @@ export function App() {
           <div style={{ opacity: isMuted ? 0.3 : 1, transition: 'opacity 0.2s', pointerEvents: isMuted ? 'none' : 'auto' }}>
             <div style={{ padding: '1rem 0', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <Fader
-                label={`VOLUME: ${userData.instrument.toUpperCase()}`}
+                label={userData.instrument.toUpperCase()}
                 color="var(--accent)"
                 value={myInstrumentVol}
                 isMaster={true}
@@ -450,7 +452,7 @@ export function App() {
               {(userData.additionalInstruments || []).map(chIdx => (
                 <div key={`add-${chIdx}`} style={{ position: 'relative' }}>
                   <Fader
-                    label={`VOLUME: ${channelsData[chIdx].name.toUpperCase()}`}
+                    label={channelsData[chIdx].name.toUpperCase()}
                     color="var(--accent)"
                     value={channelsData[chIdx].vol}
                     isMaster={true}
@@ -514,7 +516,7 @@ export function App() {
             </div>
 
 
-            <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>OUTROS INSTRUMENTOS DA BANDA</h3>
+            <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>AJUSTE O VOLUME DA BANDA</h3>
             <div className="mixer-grid">
               {channelsData.map((ch, i: number) => {
                 if (i === userData.instrumentIndex || (userData.additionalInstruments || []).includes(i)) return null;
