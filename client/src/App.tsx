@@ -34,6 +34,10 @@ export function App() {
   const [masterVol, setMasterVol] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
+  // Connection Error States so we can show user-friendly messages
+  const [setupError, setSetupError] = useState(false);
+  const [sessionError, setSessionError] = useState(false);
+
   // 24 Channels from Ui24R
   const [channelsData, setChannelsData] = useState<{ vol: number, name: string }[]>(() => {
     return Array(24).fill(0).map((_, i) => ({ vol: 0, name: `CH ${i + 1}` }));
@@ -51,12 +55,23 @@ export function App() {
     let unsubs: Array<() => void> = [];
     const sui = new SoundcraftUI('192.168.1.10');
 
-    // Initialize with default values
+    // Initialize with default values just in case
     setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: `CH ${i + 1}` })));
+
+    let connectTimeout: any;
 
     const fetchSetupChannels = async () => {
       try {
+        connectTimeout = setTimeout(() => {
+          setSetupError(true);
+        }, 4000); // 4 seconds to timeout
+
         await sui.connect();
+
+        // If it connected, clear the error
+        clearTimeout(connectTimeout);
+        setSetupError(false);
+
         for (let i = 0; i < 24; i++) {
           const input = sui.master.input(i + 1);
           const subName = input.name$.subscribe((name: string) => {
@@ -70,12 +85,14 @@ export function App() {
         }
       } catch (e) {
         console.error("Failed to connect for setup names", e);
+        setSetupError(true);
       }
     };
 
     fetchSetupChannels();
 
     return () => {
+      clearTimeout(connectTimeout);
       unsubs.forEach(u => u());
       sui.disconnect();
     };
@@ -85,6 +102,7 @@ export function App() {
   // Effect for Musician View
   useEffect(() => {
     let unsubs: Array<() => void> = [];
+    let connectTimeout: any;
 
     const connectMixer = async () => {
       if (!userData) return;
@@ -94,11 +112,22 @@ export function App() {
 
       // Subscribe to connection status
       const subStatus = sui.status$.subscribe((status: any) => {
-        setIsConnected(status.type === 'OPEN');
+        const connected = status.type === 'OPEN';
+        setIsConnected(connected);
+        if (connected) {
+          clearTimeout(connectTimeout);
+          setSessionError(false);
+        }
       });
       unsubs.push(() => subStatus.unsubscribe());
 
       try {
+        connectTimeout = setTimeout(() => {
+          if (!isConnected) {
+            setSessionError(true);
+          }
+        }, 5000); // 5 sec timeout
+
         await sui.connect();
 
         // Listen to Master AUX Volume
@@ -135,6 +164,7 @@ export function App() {
 
       } catch (err) {
         console.error("Connection error: ", err);
+        setSessionError(true);
       }
     };
 
@@ -143,6 +173,7 @@ export function App() {
     }
 
     return () => {
+      clearTimeout(connectTimeout);
       unsubs.forEach(unsub => unsub());
       if (suiRef.current) {
         suiRef.current.disconnect();
@@ -167,6 +198,7 @@ export function App() {
   const handleLogout = () => {
     setUserData(null);
     setIsConnected(false);
+    setSessionError(false);
     localStorage.removeItem('userData');
     if (suiRef.current) {
       suiRef.current.disconnect();
@@ -202,11 +234,21 @@ export function App() {
   if (!userData) {
     return (
       <div className="login-container">
-        <div className="login-card glass-panel">
-          <div className="brand">
+        <div className="login-card glass-panel" style={{ maxWidth: 400, margin: 'auto' }}>
+          <div className="brand" style={{ marginBottom: '1.5rem' }}>
             <h1 className="brand-title">A3Mon</h1>
-            <p className="text-small">Sistema de Monitor Pessoal</p>
+            <p className="text-small">Monitor Pessoal Offline</p>
           </div>
+
+          {setupError && (
+            <div style={{ padding: '0.8rem', backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '8px', marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.85rem', color: '#fff', margin: 0 }}>
+                <strong style={{ color: 'var(--danger)' }}>Sem conexão com a mesa!</strong><br />
+                Por favor, conecte-se na rede <b>Wi-Fi da Igreja A3</b>.
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleSetupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="input-group">
               <label className="input-label">Seu Nome</label>
@@ -237,7 +279,13 @@ export function App() {
               <input name="mixerIp" type="text" className="input" defaultValue="192.168.1.10" />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>Entrar na Mixagem</button>
+            <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Entrar na Mixagem</button>
+
+            {setupError && (
+              <button type="button" onClick={() => window.location.reload()} className="btn" style={{ padding: '0.8rem' }}>
+                🔄 Tentar reconectar
+              </button>
+            )}
           </form>
         </div>
       </div>
@@ -291,8 +339,32 @@ export function App() {
             </div>
           </div>
         ) : (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-            Conectando à mesa (192.168.1.10)...
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', padding: '2rem', textAlign: 'center' }}>
+            {!sessionError ? (
+              <>
+                <div className="status-dot connected" style={{ width: 16, height: 16, marginBottom: '1rem', animation: 'pulse 1.5s infinite' }} />
+                <p style={{ fontSize: '1.1rem' }}>Conectando à mesa de som...</p>
+                <p style={{ fontSize: '0.85rem', opacity: 0.6, marginTop: '0.5rem' }}>Aguardando rede 192.168.1.10</p>
+              </>
+            ) : (
+              <div style={{ backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '12px', padding: '1.5rem', width: '100%', maxWidth: 400 }}>
+                <h2 style={{ color: 'var(--danger)', marginBottom: '1rem', fontSize: '1.4rem' }}>Você está Offline</h2>
+                <p style={{ color: '#fff', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                  Para usar o monitor pessoal, o seu dispositivo <strong>obrigatoriamente precisa estar conectado no Wi-Fi da Mesa (Igreja A3)</strong>.
+                </p>
+
+                <ol style={{ textAlign: 'left', color: '#ccc', fontSize: '0.9rem', marginBottom: '1.5rem', paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+                  <li>Saia do aplicativo (mas não feche).</li>
+                  <li>Vá nos <b>Ajustes de Wi-Fi</b> do celular.</li>
+                  <li>Conecte-se na rede da <b>Mesa de Som (A3)</b>.</li>
+                  <li>Volte aqui e clique no botão abaixo.</li>
+                </ol>
+
+                <button className="btn btn-primary" style={{ width: '100%', padding: '1rem' }} onClick={() => window.location.reload()}>
+                  Tentar Reconectar
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
