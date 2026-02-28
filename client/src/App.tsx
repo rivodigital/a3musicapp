@@ -149,6 +149,13 @@ export function App() {
     const connectMixer = async () => {
       if (!userData) return;
 
+      if (userData.mixerIp === 'DEMO') {
+        setIsConnected(true);
+        setSessionError(false);
+        setChannelsData(Array(24).fill(0).map((_, i) => ({ vol: 0.5, name: `Canal Teste ${i + 1}` })));
+        return; // Don't actually connect to the mixer in demo mode
+      }
+
       const sui = new SoundcraftUI(userData.mixerIp);
       suiRef.current = sui;
 
@@ -252,6 +259,14 @@ export function App() {
   };
 
   const handleSetVol = (chIndex: number, vol: number) => {
+    if (userData?.mixerIp === 'DEMO') {
+      setChannelsData(prev => {
+        const next = [...prev];
+        next[chIndex] = { ...next[chIndex], vol };
+        return next;
+      });
+      return;
+    }
     if (!suiRef.current || !userData) return;
     try {
       suiRef.current.aux(userData.auxIndex + 1).input(chIndex + 1).setFaderLevel(vol);
@@ -259,6 +274,10 @@ export function App() {
   };
 
   const handleSetMyInstrumentVol = (vol: number) => {
+    if (userData?.mixerIp === 'DEMO') {
+      setMyInstrumentVol(vol);
+      return;
+    }
     if (!suiRef.current || !userData) return;
     try {
       suiRef.current.aux(userData.auxIndex + 1).input(userData.instrumentIndex + 1).setFaderLevel(vol);
@@ -266,6 +285,10 @@ export function App() {
   };
 
   const handleToggleMute = () => {
+    if (userData?.mixerIp === 'DEMO') {
+      setIsMuted(!isMuted);
+      return;
+    }
     if (!suiRef.current || !userData) return;
     try {
       if (isMuted) {
@@ -341,7 +364,7 @@ export function App() {
               {/* Hidden by default, useful for local testing */}
               <div className="input-group" style={{ display: 'none' }}>
                 <label className="input-label">Mixer IP</label>
-                <input name="mixerIp" type="text" className="input" defaultValue="192.168.1.10" />
+                <input id="mixer-ip-input" name="mixerIp" type="text" className="input" defaultValue="192.168.1.10" />
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Entrar na Mixagem</button>
@@ -350,6 +373,23 @@ export function App() {
             <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <button type="button" onClick={() => window.location.reload()} className="btn" style={{ padding: '0.8rem' }}>
                 🔄 Tentar reconectar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: `Canal Teste ${i + 1}` })));
+                  setSetupAuxes(Array(10).fill(0).map((_, i) => ({ index: i, name: `AUX Teste ${i + 1}` })));
+                  setSetupError(false);
+                  setIsSetupConnected(true);
+                  setTimeout(() => {
+                    const ipInput = document.getElementById('mixer-ip-input') as HTMLInputElement;
+                    if (ipInput) ipInput.value = 'DEMO';
+                  }, 100);
+                }}
+                className="btn"
+                style={{ padding: '0.8rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}
+              >
+                🎮 Entrar no Modo Teste (Offline)
               </button>
             </form>
           )}

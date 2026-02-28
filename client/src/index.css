@@ -298,6 +298,7 @@ h4 {
   height: 300px;
   position: relative;
   width: 90px;
+  touch-action: none;
   display: flex;
   justify-content: center;
 }

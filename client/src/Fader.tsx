@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import classNames from 'classnames';
 
 interface FaderProps {
@@ -14,27 +14,39 @@ export const Fader: React.FC<FaderProps> = ({
 }) => {
     const trackRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [localValue, setLocalValue] = useState(value);
+
+    // Sync external changes when not actively dragging
+    useEffect(() => {
+        if (!isDragging) {
+            setLocalValue(value);
+        }
+    }, [value, isDragging]);
 
     // Convert normalized 0-1 value to pixels (bottom=0, top=100%)
     const getValFromEvent = useCallback((clientY: number) => {
-        if (!trackRef.current) return value;
+        if (!trackRef.current) return localValue;
         const rect = trackRef.current.getBoundingClientRect();
         // y goes down, value goes up
         const percent = 1 - (clientY - rect.top) / rect.height;
         return Math.max(0, Math.min(1, percent));
-    }, [value]);
+    }, [localValue]);
 
     const handlePointerDown = (e: React.PointerEvent) => {
         e.preventDefault();
         setIsDragging(true);
         if (trackRef.current) trackRef.current.setPointerCapture(e.pointerId);
 
-        onChange(getValFromEvent(e.clientY));
+        const v = getValFromEvent(e.clientY);
+        setLocalValue(v);
+        onChange(v);
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {
         if (!isDragging) return;
-        onChange(getValFromEvent(e.clientY));
+        const v = getValFromEvent(e.clientY);
+        setLocalValue(v);
+        onChange(v);
     };
 
     const handlePointerUp = (e: React.PointerEvent) => {
@@ -43,7 +55,7 @@ export const Fader: React.FC<FaderProps> = ({
     };
 
     // Convert value back to percentage for layout
-    const valPercent = value * 100;
+    const valPercent = localValue * 100;
 
     return (
         <div className={classNames('fader-strip', { 'master-strip': isMaster })}>
@@ -53,7 +65,7 @@ export const Fader: React.FC<FaderProps> = ({
             />
             <div className="channel-name" title={label}>{label}</div>
             <div className="fader-value">
-                {Math.round(value * 100)}%
+                {Math.round(localValue * 100)}%
             </div>
 
             <div
