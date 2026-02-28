@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'A3 Music Mixer',
-        short_name: 'A3 Music',
+        name: 'Music Mixer',
+        short_name: 'Music Mixer',
         description: 'PWA Web App de Controle de Mixer',
         theme_color: '#050505',
         background_color: '#000000',
