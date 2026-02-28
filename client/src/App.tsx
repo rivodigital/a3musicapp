@@ -213,7 +213,8 @@ export function App() {
       if (userData.mixerIp === 'DEMO') {
         setIsConnected(true);
         setSessionError(false);
-        setChannelsData(Array(24).fill(0).map((_, i) => ({ vol: 0.5, name: `Canal Teste ${i + 1}` })));
+        const mockNames = ['Bumbo', 'Caixa', 'Ton 1', 'Ton 2', 'Surdo', 'Over L', 'Over R', 'Baixo', 'Guitarra', 'Violão', 'Teclado', 'Voz 1', 'Voz 2', 'Click'];
+        setChannelsData(Array(24).fill(0).map((_, i) => ({ vol: 0.5, name: mockNames[i] || `Canal ${i + 1}` })));
         return; // Don't actually connect to the mixer in demo mode
       }
 
@@ -447,7 +448,8 @@ export function App() {
               <button
                 type="button"
                 onClick={() => {
-                  setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: `Canal Teste ${i + 1}` })));
+                  const mockNames = ['Bumbo', 'Caixa', 'Ton 1', 'Ton 2', 'Surdo', 'Over L', 'Over R', 'Baixo', 'Guitarra', 'Violão', 'Teclado', 'Voz 1', 'Voz 2', 'Click'];
+                  setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: mockNames[i] || `Canal ${i + 1}` })));
                   setSetupAuxes(Array(10).fill(0).map((_, i) => ({ index: i, name: `AUX Teste ${i + 1}` })));
                   setSetupError(false);
                   setIsSetupConnected(true);
