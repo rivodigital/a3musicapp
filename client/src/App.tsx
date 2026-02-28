@@ -45,6 +45,7 @@ export function App() {
 
   // Setup channels for the dropdown
   const [setupChannels, setSetupChannels] = useState<{ index: number, name: string }[]>([]);
+  const [setupAuxes, setSetupAuxes] = useState<{ index: number, name: string }[]>([]);
 
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -80,6 +81,7 @@ export function App() {
 
     // Initialize with default values just in case
     setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: `CH ${i + 1}` })));
+    setSetupAuxes(Array(10).fill(0).map((_, i) => ({ index: i, name: `AUX ${i + 1}` })));
 
     let connectTimeout: any;
 
@@ -105,6 +107,18 @@ export function App() {
             });
           });
           unsubs.push(() => subName.unsubscribe());
+        }
+
+        for (let i = 0; i < 10; i++) {
+          const aux = sui.master.aux(i + 1);
+          const subAuxName = aux.name$.subscribe((name: string) => {
+            setSetupAuxes(prev => {
+              const next = [...prev];
+              next[i] = { index: i, name: name || `AUX ${i + 1}` };
+              return next;
+            });
+          });
+          unsubs.push(() => subAuxName.unsubscribe());
         }
       } catch (e) {
         console.error("Failed to connect for setup names", e);
@@ -309,8 +323,8 @@ export function App() {
             <div className="input-group">
               <label className="input-label">Qual é o seu AUX? (Pergunte ao técnico)</label>
               <select name="auxIndex" className="input" required defaultValue="0">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((auxNum, idx) => (
-                  <option key={idx} value={idx}>AUX {auxNum}</option>
+                {setupAuxes.map(aux => (
+                  <option key={aux.index} value={aux.index}>{aux.name}</option>
                 ))}
               </select>
             </div>
@@ -376,7 +390,7 @@ export function App() {
           <div style={{ opacity: isMuted ? 0.3 : 1, transition: 'opacity 0.2s', pointerEvents: isMuted ? 'none' : 'auto' }}>
             <div style={{ padding: '1rem 0', display: 'flex', justifyContent: 'center' }}>
               <Fader
-                label="MEU VOLUME"
+                label="VOLUME GERAL DO FONE"
                 color="var(--accent)"
                 value={masterVol}
                 isMaster={true}
@@ -384,7 +398,7 @@ export function App() {
               />
             </div>
 
-            <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Minha Mixagem</h3>
+            <h3 style={{ marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>MIXAGEM DOS INSTRUMENTOS</h3>
             <div className="mixer-grid">
               {channelsData.map((ch, i: number) => (
                 <Fader
