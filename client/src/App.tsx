@@ -46,6 +46,29 @@ export function App() {
   // Setup channels for the dropdown
   const [setupChannels, setSetupChannels] = useState<{ index: number, name: string }[]>([]);
 
+  // PWA Install Prompt State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    // Detect iOS
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(iOS);
+
+    // Detect if already installed (standalone mode)
+    const isStand = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    setIsStandalone(isStand);
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
   const suiRef = useRef<SoundcraftUI | null>(null);
 
   // Effect for Setup Screen
@@ -236,6 +259,17 @@ export function App() {
     alert("Senha A3123456 copiada!");
   };
 
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          setDeferredPrompt(null);
+        }
+      });
+    }
+  };
+
   if (!userData) {
     return (
       <div className="login-container">
@@ -295,6 +329,23 @@ export function App() {
               </button>
             )}
           </form>
+
+          {/* PWA Install Area */}
+          {!isStandalone && (
+            <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              {deferredPrompt && (
+                <button type="button" onClick={handleInstallClick} className="btn" style={{ width: '100%', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  ⬇️ Instalar Aplicativo
+                </button>
+              )}
+              {isIOS && !deferredPrompt && (
+                <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <p>Para instalar no <b>iPhone</b>:</p>
+                  <p>Toque em <span style={{ fontSize: '1.2rem', verticalAlign: 'middle' }}>⍐</span> <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b></p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
