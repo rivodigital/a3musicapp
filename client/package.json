@@ -6,15 +6,10 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
     "classnames": "^2.5.1",
-    "jwt-decode": "^4.0.0",
-    "lucide-react": "^0.575.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "soundcraft-ui-connection": "^5.0.0"

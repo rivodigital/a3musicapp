@@ -3,6 +3,15 @@ import { Fader } from './Fader';
 import { SoundcraftUI } from 'soundcraft-ui-connection';
 import './index.css';
 
+// Auto-detecta o IP da mesa pelo hostname da página.
+// Se servido de http://192.168.1.10/monitor/, conecta em ws://192.168.1.10/
+// Se rodando local (localhost), usa o IP padrão da mesa.
+const detectMixerIp = () => {
+  const h = window.location.hostname;
+  if (h && h !== 'localhost' && h !== '127.0.0.1') return h;
+  return '192.168.1.10';
+};
+
 interface UserData {
   instrument: string;
   instrumentIndex: number;
@@ -139,6 +148,9 @@ export function App() {
   const [setupChannels, setSetupChannels] = useState<{ index: number, name: string }[]>([]);
   const [setupAuxes, setSetupAuxes] = useState<{ index: number, name: string }[]>([]);
 
+  // Modo demo (sem mesa real)
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
   // PWA Install Prompt State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
@@ -170,7 +182,7 @@ export function App() {
     if (userData) return;
 
     let unsubs: Array<() => void> = [];
-    const sui = new SoundcraftUI('192.168.1.10');
+    const sui = new SoundcraftUI(detectMixerIp());
 
     // Initialize with default values just in case
     setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: `CH ${i + 1}` })));
@@ -335,7 +347,7 @@ export function App() {
       additionalInstruments: [],
       auxIndex: parseInt(target.auxIndex.value, 10),
       auxName: target.auxIndex.options[target.auxIndex.selectedIndex].text,
-      mixerIp: target.mixerIp.value || '192.168.1.10'
+      mixerIp: isDemoMode ? 'DEMO' : detectMixerIp()
     };
 
     setUserData(data);
@@ -422,14 +434,20 @@ export function App() {
           </div>
 
           {setupError && (
-            <div style={{ padding: '0.8rem', backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '8px', marginBottom: '1rem', textAlign: 'left' }}>
-              <p style={{ fontSize: '0.85rem', color: '#fff', margin: 0, lineHeight: '1.5' }}>
-                <strong style={{ color: 'var(--danger)' }}>Sem conexão com a mesa!</strong><br />
-                Por favor, conecte-se na rede Wi-Fi:<br />
-                <b>Rede:</b> MESADESOM-A3<br />
-                <b>Senha:</b> A3123456{' '}
-                <button type="button" onClick={handleCopyPassword} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer', marginLeft: '5px' }}>Copiar Senha</button>
+            <div style={{ padding: '1rem', backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '12px', marginBottom: '1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📶</div>
+              <p style={{ fontSize: '1rem', color: 'var(--danger)', fontWeight: 700, margin: '0 0 0.5rem' }}>Fora do Wi-Fi da Mesa</p>
+              <p style={{ fontSize: '0.85rem', color: '#ccc', margin: '0 0 0.8rem', lineHeight: 1.5 }}>
+                Para usar o monitor, conecte-se ao Wi-Fi:
               </p>
+              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '0.6rem 1rem', marginBottom: '0.8rem', textAlign: 'left' }}>
+                <p style={{ margin: '0 0 0.3rem', fontSize: '0.85rem' }}><b>Rede:</b> MESADESOM-A3</p>
+                <p style={{ margin: 0, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <b>Senha:</b> A3123456{' '}
+                  <button type="button" onClick={handleCopyPassword} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', cursor: 'pointer' }}>Copiar</button>
+                </p>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', margin: 0 }}>Após conectar, a tela vai atualizar automaticamente.</p>
             </div>
           )}
 
@@ -461,12 +479,6 @@ export function App() {
                 </select>
               </div>
 
-              {/* Hidden by default, useful for local testing */}
-              <div className="input-group" style={{ display: 'none' }}>
-                <label className="input-label">Mixer IP</label>
-                <input id="mixer-ip-input" name="mixerIp" type="text" className="input" defaultValue="192.168.1.10" />
-              </div>
-
               <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Entrar na Mixagem</button>
             </form>
           ) : (
@@ -481,11 +493,8 @@ export function App() {
                   setSetupChannels(Array(24).fill(0).map((_, i) => ({ index: i, name: mockNames[i] || `Canal ${i + 1}` })));
                   setSetupAuxes(Array(10).fill(0).map((_, i) => ({ index: i, name: `AUX Teste ${i + 1}` })));
                   setSetupError(false);
+                  setIsDemoMode(true);
                   setIsSetupConnected(true);
-                  setTimeout(() => {
-                    const ipInput = document.getElementById('mixer-ip-input') as HTMLInputElement;
-                    if (ipInput) ipInput.value = 'DEMO';
-                  }, 100);
                 }}
                 className="btn"
                 style={{ padding: '0.8rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)' }}
@@ -677,23 +686,24 @@ export function App() {
                 <p style={{ fontSize: '0.85rem', opacity: 0.6, marginTop: '0.5rem' }}>Aguardando rede 192.168.1.10</p>
               </>
             ) : (
-              <div style={{ backgroundColor: 'rgba(231, 76, 60, 0.1)', border: '1px solid var(--danger)', borderRadius: '12px', padding: '1.5rem', width: '100%', maxWidth: 400 }}>
-                <h2 style={{ color: 'var(--danger)', marginBottom: '1rem', fontSize: '1.4rem' }}>Você está Offline</h2>
-                <p style={{ color: '#fff', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-                  Para usar o monitor pessoal, o seu dispositivo <strong>obrigatoriamente precisa estar conectado no Wi-Fi da Mesa</strong>.
+              <div style={{ backgroundColor: 'rgba(231, 76, 60, 0.08)', border: '1px solid var(--danger)', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: 380, textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📶</div>
+                <h2 style={{ color: 'var(--danger)', marginBottom: '0.5rem', fontSize: '1.3rem' }}>Fora do Wi-Fi da Mesa</h2>
+                <p style={{ color: '#ccc', marginBottom: '1.2rem', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                  O monitor pessoal só funciona conectado ao Wi-Fi da mesa de som.
                 </p>
 
-                <ol style={{ textAlign: 'left', color: '#ccc', fontSize: '0.9rem', marginBottom: '1.5rem', paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                  <li>Vá nos <b>Ajustes de Wi-Fi</b> do celular.</li>
-                  <li>Conecte-se na rede <b>MESADESOM-A3</b>.</li>
-                  <li>Senha: <b>A3123456</b>
-                    <button type="button" onClick={handleCopyPassword} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.8rem', cursor: 'pointer', marginLeft: '10px' }}>Copiar Senha</button>
-                  </li>
-                  <li>Volte aqui e clique no botão abaixo.</li>
-                </ol>
+                <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '10px', padding: '0.8rem 1rem', marginBottom: '1.2rem', textAlign: 'left' }}>
+                  <p style={{ margin: '0 0 0.4rem', fontSize: '0.9rem' }}>1. Abra os <b>Ajustes de Wi-Fi</b> do celular</p>
+                  <p style={{ margin: '0 0 0.4rem', fontSize: '0.9rem' }}>2. Conecte na rede <b>MESADESOM-A3</b></p>
+                  <p style={{ margin: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    3. Senha: <b>A3123456</b>
+                    <button type="button" onClick={handleCopyPassword} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 10px', fontSize: '0.8rem', cursor: 'pointer' }}>Copiar</button>
+                  </p>
+                </div>
 
-                <button className="btn btn-primary" style={{ width: '100%', padding: '1rem' }} onClick={() => window.location.reload()}>
-                  Tentar Reconectar
+                <button className="btn btn-primary" style={{ width: '100%', padding: '0.9rem', fontSize: '1rem' }} onClick={() => window.location.reload()}>
+                  Já conectei — Tentar de novo
                 </button>
               </div>
             )}

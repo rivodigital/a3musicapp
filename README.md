@@ -1,68 +1,68 @@
-# A3Mon - Controle Pessoal para Soundcraft Ui24R
+# Monitor Pessoal A3 — Soundcraft Ui24R
 
-A3Mon é um sistema de monitor pessoal focado no músico, que roda no navegador (mobile-first). O objetivo principal é garantir segurança na mixagem ao vivo, onde o músico tem permissão de ajustar apenas o seu próprio retorno de fone (AUX), limitado em ±6dB do ponto base (Base Mix) definido pelo técnico de som.
+App web mobile-first para músicos controlarem seu próprio retorno de fone (AUX) em tempo real, conectando diretamente à mesa Soundcraft Ui24R via Wi-Fi.
+
+## Como funciona
+
+- O músico conecta o celular no Wi-Fi da mesa (`MESADESOM-A3`)
+- Abre o browser e acessa `http://192.168.1.10/monitor/`
+- Escolhe seu instrumento e AUX
+- Controla os volumes do retorno em tempo real
+- Pode instalar como app na tela inicial (PWA — funciona no Android e iPhone)
+
+Se o celular não estiver no Wi-Fi correto, o app exibe uma tela de aviso com as instruções para conectar.
 
 ## Arquitetura
 
-1. `client/`: Um SPA React (Vite, TypeScript, CSS customizado e de alta fidelidade).
-2. `server/`: Backend em Node.js / Express / WebSockets, que atua como barreira de segurança, e ponte de comunicação entre os músicos e a Soundcraft Ui24R.
-
-### Tecnologias
-
-- **Backend**: Node.js, Express, WebSocket (ws), typescript.
-- **Integração Ui24R**: Usa a biblioteca `soundcraft-ui-connection`.
-- **Frontend**: React.ts com Vite, design zero-dependências externas de CSS (somente UI super-premium escrita do zero).
-
-## Funcionalidades
-
-- **Regras de Segurança / Limite**: Os ajustes do frontend chegam ao backend, que verifica se o usuário não excedeu as limitações criadas (apenas ±6dB do mix base e acesso restrito ao próprio Aux).
-- **Sem Fakes ou Hooks diretos**: O frontend NUNCA fala diretamente com a mesa e os músicos não enxergam as configurações L/R ou Gain.
-- **Mixers Mock Opcional**: Ao rodar testes sem mesa, pode-se usar variável de ambiente no server `MOCK_UI24R=true`.
-
-## Pré-requisitos & Executando
-
-Necessário Node.js 18+.
-
-### Inicializando o Servidor (Backend)
-Va até a pasta `/server`, renomeie `.env.example` caso exista ou altere o `.env` gerado.
-
-```bash
-cd server
-npm install
-npm run dev
+```
+Celular do músico (browser)
+        ↓  WebSocket direto (ws://192.168.1.10/)
+Soundcraft Ui24R (192.168.1.10)
 ```
 
-*Nota para uso na mesa*: Use a porta `80` no `.env` (UI24R_PORT=80) e o IP da mesa adequadamente (ex `192.168.1.10` dependendo do uso). Você pode desligar o modo mockup alterando `MOCK_UI24R=false`.
+O app conecta diretamente à mesa — sem servidor intermediário, sem notebook, sem backend.
 
-### Inicializando o Cliente (Frontend)
+## Tecnologias
 
-Abra outro terminal:
+- **Frontend**: React + TypeScript + Vite
+- **Conexão com a mesa**: `soundcraft-ui-connection` (WebSocket)
+- **PWA**: manifest para instalação como app no celular
+
+## Estrutura
+
+```
+a3musicapp/
+├── client/           → App React
+│   ├── src/
+│   │   ├── App.tsx   → Tela de setup + tela de mixer
+│   │   └── Fader.tsx → Componente de fader
+│   └── public/       → Assets estáticos
+└── deploy.sh         → Script para enviar o app para a mesa via SSH
+```
+
+## Deploy na mesa (Soundcraft Ui24R)
+
+Com o computador conectado no Wi-Fi da mesa, rode na raiz do projeto:
+
+```bash
+./deploy.sh
+```
+
+O script faz o build e envia os arquivos para `/www/monitor/` na mesa automaticamente.
+
+**Credenciais SSH padrão da mesa:**
+- Host: `192.168.1.10`
+- Usuário: `root`
+- Senha: `root`
+
+Após o deploy, os músicos acessam `http://192.168.1.10/monitor/` e podem instalar como app.
+
+## Desenvolvimento local
 
 ```bash
 cd client
 npm install
 npm run dev
 ```
-Acesse `http://localhost:5173`.
 
-### Como Testar
-
-Os usuários Mock padrão para testar via Login:
-
-- **Músico de Teste 1**: 
-  - Usuário: `musico1`
-  - Senha: `123`
-  - Acesso ao AUX1 (Índice interno `0`)
-- **Músico de Teste 2**: 
-  - Usuário: `musico2`
-  - Senha: `123`
-  - Acesso ao AUX2 (Índice interno `1`)
-- **Admin**:
-  - Usuário: `admin`
-  - Senha: `123`
-
-## Camada de Comunicação com Ui24R
-
-Toda a lógica para modificar na mesa real encontra-se em `server/src/mixerService.ts`. Devido a termos inserido o projeto `soundcraft-ui-connection`, as transações ocorrem usando os objetos próprios e os WebSockets diretamente mantidos pela mesma. 
-
-Se quiser inspecionar ou estender, modifique `setChannelVolume` e `setMasterVolume` no serviço, onde controlamos a checagem com o `presetBase`.
+Acesse `http://localhost:5173`. Para testar sem a mesa, use o botão **Modo Teste (Offline)** na tela de setup.
