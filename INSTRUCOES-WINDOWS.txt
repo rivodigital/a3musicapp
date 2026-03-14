@@ -1,0 +1,77 @@
+===============================================
+  INSTRUCOES DE DEPLOY — Monitor Pessoal A3
+  Para uso no notebook Windows da igreja
+===============================================
+
+PRE-REQUISITO: Notebook conectado ao Wi-Fi da mesa
+  Rede:  MESADESOM-A3
+  Senha: A3123456
+
+===============================================
+PASSO 1 — BAIXAR O PROJETO
+===============================================
+
+OPCAO A (se tiver Git instalado no Windows):
+  Abra o PowerShell e rode:
+    git clone https://github.com/rivodigital/a3musicapp.git
+    cd a3musicapp
+
+OPCAO B (sem Git — download manual):
+  1. Abra o navegador e acesse:
+     https://github.com/rivodigital/a3musicapp/archive/refs/heads/main.zip
+  2. Salve e extraia o ZIP
+  3. Abra o PowerShell e navegue ate a pasta extraida:
+     cd C:\caminho\para\a3musicapp-main
+
+===============================================
+PASSO 2 — CONECTAR AO WI-FI DA MESA
+===============================================
+
+  1. Va nas configuracoes de Wi-Fi do notebook
+  2. Conecte na rede:  MESADESOM-A3
+  3. Senha:            A3123456
+
+===============================================
+PASSO 3 — RODAR O DEPLOY
+===============================================
+
+  No PowerShell (na pasta do projeto), rode:
+
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+    .\deploy-windows.ps1
+
+  Quando pedir a senha SSH, digite:  root
+  (pode aparecer 2 vezes — em ambas digitite: root)
+
+===============================================
+PASSO 4 — TESTAR NO CELULAR
+===============================================
+
+  1. Conecte o celular no Wi-Fi:  MESADESOM-A3
+     Senha: A3123456
+
+  2. Abra o navegador e acesse:
+     http://192.168.1.10/monitor/
+
+  3. Para instalar como app:
+     Android: Menu do Chrome > "Adicionar a tela inicial"
+     iPhone:  botao Compartilhar > "Adicionar a Tela de Inicio"
+
+===============================================
+EM CASO DE PROBLEMA
+===============================================
+
+Erro "nao foi possivel alcançar 192.168.1.10":
+  -> Verifique se o notebook esta no Wi-Fi MESADESOM-A3
+
+Erro de permissao no PowerShell:
+  -> Rode antes: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+Senha SSH recusada:
+  -> A senha padrao da mesa e: root
+
+Pagina nao abre no celular:
+  -> Verifique se o celular esta no Wi-Fi MESADESOM-A3
+  -> Tente forçar o endereco: http://192.168.1.10/monitor/index.html
+
+===============================================
