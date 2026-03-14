@@ -14,7 +14,7 @@
 #      .\deploy-windows.ps1
 # =====================================================
 
-$MIXER_IP   = "192.168.1.10"
+$MIXER_IP   = "192.168.1.9"
 $MIXER_USER = "root"
 $REMOTE_DIR = "/www/monitor"
 $LOCAL_DIST = Join-Path $PSScriptRoot "client\dist"

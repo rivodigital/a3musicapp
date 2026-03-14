@@ -14,7 +14,7 @@
 
 set -e
 
-MIXER_IP="192.168.1.10"
+MIXER_IP="192.168.1.9"
 MIXER_USER="root"
 MIXER_PASS="root"           # Senha padrão — altere se a sua mesa for diferente
 REMOTE_DIR="/www/monitor"   # Pasta dentro do web server da mesa

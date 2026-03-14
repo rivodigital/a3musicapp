@@ -4,12 +4,12 @@ import { SoundcraftUI } from 'soundcraft-ui-connection';
 import './index.css';
 
 // Auto-detecta o IP da mesa pelo hostname da página.
-// Se servido de http://192.168.1.10/monitor/, conecta em ws://192.168.1.10/
+// Se servido de http://192.168.1.9/monitor/, conecta em ws://192.168.1.9/
 // Se rodando local (localhost), usa o IP padrão da mesa.
 const detectMixerIp = () => {
   const h = window.location.hostname;
   if (h && h !== 'localhost' && h !== '127.0.0.1') return h;
-  return '192.168.1.10';
+  return '192.168.1.9';
 };
 
 interface UserData {
@@ -683,7 +683,7 @@ export function App() {
               <>
                 <div className="status-dot connected" style={{ width: 16, height: 16, marginBottom: '1rem', animation: 'pulse 1.5s infinite' }} />
                 <p style={{ fontSize: '1.1rem' }}>Conectando à mesa de som...</p>
-                <p style={{ fontSize: '0.85rem', opacity: 0.6, marginTop: '0.5rem' }}>Aguardando rede 192.168.1.10</p>
+                <p style={{ fontSize: '0.85rem', opacity: 0.6, marginTop: '0.5rem' }}>Aguardando rede 192.168.1.9</p>
               </>
             ) : (
               <div style={{ backgroundColor: 'rgba(231, 76, 60, 0.08)', border: '1px solid var(--danger)', borderRadius: '16px', padding: '1.5rem', width: '100%', maxWidth: 380, textAlign: 'center' }}>

@@ -15,7 +15,7 @@
 
 set -e
 
-MIXER_IP="192.168.1.10"
+MIXER_IP="192.168.1.9"
 MIXER_USER="root"
 REMOTE_DIR="/www/monitor"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
